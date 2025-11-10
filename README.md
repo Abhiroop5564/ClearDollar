@@ -5,7 +5,7 @@ A modern, secure, and intelligent platform for managing personal finances with u
 
 💡 Overview
 
-An online budgeting application designed for users who need more control and deeper insight into their spending than standard budgeting tools offer. By combining secure bank account aggregation with a hierarchical, three-tier tagging system and conversational AI automation, FinTrack transforms raw transaction data into actionable, easy-to-digest financial reports.
+An online budgeting application designed for users who need more control and deeper insight into their spending than standard budgeting tools offer. By combining secure bank account aggregation with a hierarchical, three-tier tagging system and conversational AI automation, the app transforms raw transaction data into actionable, easy-to-digest financial reports.
 
 ✨ Key Features
 
