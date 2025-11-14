@@ -1,4 +1,4 @@
-# BudgetAppCSCE361
+# ClearDollar
 AI-Powered Budgeting App
 
 A modern, secure, and intelligent platform for managing personal finances with unprecedented detail and visualization.
@@ -55,21 +55,21 @@ Technology / Service
 
 Purpose
 
-Frontend
+# Frontend
 
-React / Angular / Modern HTML, CSS, JS
+React
 
 Highly interactive and responsive user interface.
 
-Backend
+# Backend
 
-Node.js / Python (Flask/Django)
+C#.Net
 
 Business logic, API handling, and AI integration.
 
-Database
+# Database
 
-Firestore / PostgreSQL / MongoDB
+Microsoft SQL
 
 Persistent, scalable storage for user transactions and custom tags.
 
