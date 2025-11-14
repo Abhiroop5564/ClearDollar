@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/BudgetAppCSCE361.props" />
-</Project>
