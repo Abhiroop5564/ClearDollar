@@ -71,50 +71,50 @@ namespace BudgetApp.Server
             // We'll create Tag instances first (without ids), collect parent relationships,
             // then assign unique TagId values and wire ParentTagId to the correct TagId.
 
-            // Primaries (use budgets from Dashboard.tsx)
+            // Primaries
             var food = new Tag { TagName = "Food", BudgetAmount = 600m };
             var housing = new Tag { TagName = "Housing", BudgetAmount = 1200m };
             var transportation = new Tag { TagName = "Transportation", BudgetAmount = 300m };
             var entertainment = new Tag { TagName = "Entertainment", BudgetAmount = 200m };
 
-            // Food -> secondaries and tertiaries
-            var groceries = new Tag { TagName = "Groceries", BudgetAmount = 0m };
-            var produce = new Tag { TagName = "Produce", BudgetAmount = 0m };
-            var packagedGoods = new Tag { TagName = "Packaged Goods", BudgetAmount = 0m };
-            var beverages = new Tag { TagName = "Beverages", BudgetAmount = 0m };
+            // Food subtree
+            var groceries = new Tag { TagName = "Groceries", BudgetAmount = 350m };
+            var produce = new Tag { TagName = "Produce", BudgetAmount = 120m };
+            var packagedGoods = new Tag { TagName = "Packaged Goods", BudgetAmount = 140m };
+            var beverages = new Tag { TagName = "Beverages", BudgetAmount = 90m };
 
-            var restaurants = new Tag { TagName = "Restaurants", BudgetAmount = 0m };
-            var fastFood = new Tag { TagName = "Fast Food", BudgetAmount = 0m };
-            var casualDining = new Tag { TagName = "Casual Dining", BudgetAmount = 0m };
-            var fineDining = new Tag { TagName = "Fine Dining", BudgetAmount = 0m };
+            var restaurants = new Tag { TagName = "Restaurants", BudgetAmount = 250m };
+            var fastFood = new Tag { TagName = "Fast Food", BudgetAmount = 120m };
+            var casualDining = new Tag { TagName = "Casual Dining", BudgetAmount = 80m };
+            var fineDining = new Tag { TagName = "Fine Dining", BudgetAmount = 50m };
 
-            // Housing -> secondaries and tertiaries
-            var rent = new Tag { TagName = "Rent", BudgetAmount = 0m };
-            var rentBase = new Tag { TagName = "Base", BudgetAmount = 0m };
+            // Housing subtree
+            var rent = new Tag { TagName = "Rent", BudgetAmount = 1100m };
+            var rentBase = new Tag { TagName = "Base", BudgetAmount = 1100m };
 
-            var utilities = new Tag { TagName = "Utilities", BudgetAmount = 0m };
-            var electric = new Tag { TagName = "Electric", BudgetAmount = 0m };
-            var water = new Tag { TagName = "Water", BudgetAmount = 0m };
-            var gas = new Tag { TagName = "Gas", BudgetAmount = 0m };
+            var utilities = new Tag { TagName = "Utilities", BudgetAmount = 100m };
+            var electric = new Tag { TagName = "Electric", BudgetAmount = 45m };
+            var water = new Tag { TagName = "Water", BudgetAmount = 30m };
+            var gas = new Tag { TagName = "Gas", BudgetAmount = 25m };
 
-            // Transportation -> secondaries and tertiaries
-            var fuel = new Tag { TagName = "Fuel", BudgetAmount = 0m };
-            var regular = new Tag { TagName = "Regular", BudgetAmount = 0m };
-            var premium = new Tag { TagName = "Premium", BudgetAmount = 0m };
+            // Transportation subtree
+            var fuel = new Tag { TagName = "Fuel", BudgetAmount = 220m };
+            var regular = new Tag { TagName = "Regular", BudgetAmount = 160m };
+            var premium = new Tag { TagName = "Premium", BudgetAmount = 60m };
 
-            var parking = new Tag { TagName = "Parking", BudgetAmount = 0m };
-            var street = new Tag { TagName = "Street", BudgetAmount = 0m };
-            var garage = new Tag { TagName = "Garage", BudgetAmount = 0m };
+            var parking = new Tag { TagName = "Parking", BudgetAmount = 80m };
+            var street = new Tag { TagName = "Street", BudgetAmount = 30m };
+            var garage = new Tag { TagName = "Garage", BudgetAmount = 50m };
 
-            // Entertainment -> secondaries and tertiaries
-            var streaming = new Tag { TagName = "Streaming", BudgetAmount = 0m };
-            var netflix = new Tag { TagName = "Netflix", BudgetAmount = 0m };
-            var hulu = new Tag { TagName = "Hulu", BudgetAmount = 0m };
-            var spotify = new Tag { TagName = "Spotify", BudgetAmount = 0m };
+            // Entertainment subtree
+            var streaming = new Tag { TagName = "Streaming", BudgetAmount = 120m };
+            var netflix = new Tag { TagName = "Netflix", BudgetAmount = 50m };
+            var hulu = new Tag { TagName = "Hulu", BudgetAmount = 40m };
+            var spotify = new Tag { TagName = "Spotify", BudgetAmount = 30m };
 
-            var events = new Tag { TagName = "Events", BudgetAmount = 0m };
-            var movies = new Tag { TagName = "Movies", BudgetAmount = 0m };
-            var liveShow = new Tag { TagName = "Live Show", BudgetAmount = 0m };
+            var events = new Tag { TagName = "Events", BudgetAmount = 80m };
+            var movies = new Tag { TagName = "Movies", BudgetAmount = 50m };
+            var liveShow = new Tag { TagName = "Live Show", BudgetAmount = 30m };
 
             // Collect child->parent relationships so we can set ParentTagId after IDs are assigned
             var relationships = new List<(Tag child, Tag parent)>

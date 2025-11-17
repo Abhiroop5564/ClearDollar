@@ -146,10 +146,16 @@ export function Dashboard() {
     const tagTree = useMemo(() => buildTagTree(tags), [tags]);
 
     /* Direct totals: tx amounts by exact tagId */
-    const directTotals = useMemo(
-        () => buildDirectTotals(transactions, tags),
-        [transactions, tags]
-    );
+
+    const directTotals = useMemo(() => buildDirectTotals(transactions, tags), [transactions, tags]);
+
+    const untaggedTotal = useMemo(() => {
+        if (!transactions) return 0;
+        return Object.values(transactions).reduce(
+            (sum, t) => (t.tagId == null ? sum + t.amount : sum),
+            0
+        );
+    }, [transactions]);
 
     /* Drilldown path (array of tagIds) */
     const [drillPath, setDrillPath] = useState([]);
@@ -197,6 +203,19 @@ export function Dashboard() {
             });
         }
 
+        // 👇 Add this block for root level untagged transactions
+        if (drillPath.length === 0 && untaggedTotal > 0) {
+            items.push({
+                id: "root-other",
+                name: "Other",
+                tagId: null,
+                value: untaggedTotal,
+                isLeaf: true,
+                isOther: true,
+            });
+        }
+
+
         return items;
     }, [currentNode, directTotals]);
 
@@ -231,6 +250,18 @@ export function Dashboard() {
                 budget: 0,     // no budget
                 pct: 0,
                 remaining: 0
+            });
+        }
+
+        // 👇 Add UNTAgGED "Other" for root level
+        if (drillPath.length === 0 && untaggedTotal > 0) {
+            items.push({
+                key: "Other",
+                spent: untaggedTotal,
+                budget: 0,
+                pct: 0,
+                remaining: 0,
+                isOther: true,
             });
         }
 
@@ -311,12 +342,16 @@ export function Dashboard() {
                                             </div>
                                         </div>
 
-                                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full ${row.spent > row.budget ? "bg-red-600" : "bg-blue-600"}`}
-                                                style={{ width: `${row.pct}%` }}
-                                            />
-                                        </div>
+                                        {Number(row.budget) > 0 ? (
+                                            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full ${row.spent > row.budget ? "bg-red-600" : "bg-blue-600"}`}
+                                                    style={{ width: `${row.pct}%` }}
+                                                />
+                                            </div>
+                                        ) : 
+                                            <div className="h-2 w-full" /> 
+                                        }
 
                                         <div className="text-xs text-gray-500 mt-1">
                                             Remaining: {currency(row.remaining)}
