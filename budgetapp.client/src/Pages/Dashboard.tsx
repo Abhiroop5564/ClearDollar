@@ -237,7 +237,7 @@ export function Dashboard() {
                 spent,
                 budget,
                 pct: budget > 0 ? Math.min(100, (spent / budget) * 100) : 0,
-                remaining: Math.max(0, budget - spent)
+                remaining: budget - spent
             });
         }
 
