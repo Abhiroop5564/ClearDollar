@@ -1,4 +1,6 @@
-﻿namespace BudgetApp.Server
+﻿using System.Runtime.CompilerServices;
+
+namespace BudgetApp.Server
 {
     public static class MockDB
     {
@@ -10,7 +12,10 @@
             Console.WriteLine($"Fetching tags for user: {userId}");
             if (!_tagStore.ContainsKey(userId))
             {
-                _tagStore[userId] = GenerateMockTags();
+                lock(_tagStore)
+                {
+                    _tagStore[userId] = GenerateMockTags();
+                }
             }
             return _tagStore[userId];
         }
@@ -20,29 +25,45 @@
             Console.WriteLine($"Fetching transactions for user: {userId}");
             if (!_transactionStore.ContainsKey(userId))
             {
-                _transactionStore[userId] = GenerateMockTransactions(GetTags(userId), 20);
+                lock(_transactionStore)
+                {
+                    _transactionStore[userId] = GenerateMockTransactions(GetTags(userId), 20);
+                }
             }
             return _transactionStore[userId];
         }
 
         public static void AddTag(string userId, Tag tag)
         {
-            _tagStore[userId].Append(tag);
+            lock(_tagStore)
+            {
+                _tagStore[userId].Append(tag);
+            }
         }
 
         public static void AddTransaction(string userId, Transaction transaction)
         {
-            _transactionStore[userId].Append(transaction);
+            lock(_transactionStore)
+            {
+                _transactionStore[userId].Append(transaction);
+            }
         }
 
         public static void SetTags(string userId, List<Tag> tags)
         {
-            _tagStore[userId] = tags;
+            lock (_tagStore)
+            {
+                _tagStore[userId] = tags;
+            }
+           
         }
 
         public static void SetTransactions(string userId, List<Transaction> transactions)
         {
-            _transactionStore[userId] = transactions;
+            lock(_transactionStore)
+            {
+                _transactionStore[userId] = transactions;
+            }
         }
 
         private static List<Tag> GenerateMockTags()

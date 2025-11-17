@@ -55,7 +55,7 @@ function buildTertiarySeries(data: Primary, primaryKey: string, secondaryKey: st
     return Object.entries(node.children).map(([name, v]) => ({ name, value: v }));
 }
 
-export default function Dashboard() {
+export function Dashboard() {
     const [drill, setDrill] = useState<DrillState>({ level: "primary" });
     const [search, setSearch] = useState("");
 
@@ -129,7 +129,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
                             {crumb.map((c, i) => (
                                 <div key={i} className="flex items-center">
-                                    {i > 0 && <span className="mx-1">›</span>}
+                                    {i > 0 && <span className="mx-1">&gt;</span>}
                                     <button className="hover:underline" onClick={c.onClick}>{c.label}</button>
                                 </div>
                             ))}

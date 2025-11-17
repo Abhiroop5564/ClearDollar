@@ -1,5 +1,5 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
-import Dashboard from "./Pages/Dashboard";
+import { Dashboard }  from "./Pages/Dashboard3";
 import { LoginPage } from "./Pages/Login";
 import { BudgetPage } from "./Pages/Budget";
 import { TransactionsPage } from "./Pages/Transactions";
