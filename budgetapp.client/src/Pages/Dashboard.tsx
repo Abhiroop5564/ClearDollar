@@ -1,190 +1,385 @@
-import React, { useMemo, useState } from "react";
+﻿import { Navbar } from "../Components/Navbar";
+import { useEffect, useState, useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Navbar } from "../Components/Navbar";
 
-type Tertiary = Record<string, number>;
-type Secondary = Record<string, { spent: number; children: Tertiary }>;
-type Primary = Record<string, { budget: number; spent: number; children: Secondary }>;
-type Level = "primary" | "secondary" | "tertiary";
-interface DrillState { level: Level; primaryKey?: string; secondaryKey?: string; }
+/* -----------------------------------------------------
+   Utilities
+----------------------------------------------------- */
 
-//TODO: replace with real data
-const DATA: Primary = {
-    Food: {
-        budget: 600, spent: 420,
-        children: {
-            Groceries: { spent: 200, children: { Produce: 80, "Packaged Goods": 60, Beverages: 60 } },
-            Restaurants: { spent: 220, children: { "Fast Food": 150, "Casual Dining": 40, "Fine Dining": 30 } },
-        },
-    },
-    Housing: {
-        budget: 1200, spent: 180,
-        children: {
-            Rent: { spent: 1100, children: { Base: 1100 } },
-            Utilities: { spent: 80, children: { Electric: 45, Water: 20, Gas: 15 } },
-        },
-    },
-    Transportation: {
-        budget: 300, spent: 150,
-        children: {
-            Fuel: { spent: 120, children: { Regular: 90, Premium: 30 } },
-            Parking: { spent: 30, children: { Street: 10, Garage: 20 } },
-        },
-    },
-    Entertainment: {
-        budget: 200, spent: 90,
-        children: {
-            Streaming: { spent: 45, children: { Netflix: 20, Hulu: 15, Spotify: 10 } },
-            Events: { spent: 45, children: { Movies: 20, "Live Show": 25 } },
-        },
-    },
-};
+// Format currency
+const currency = (n) =>
+    n.toLocaleString(undefined, { style: "currency", currency: "USD" });
 
-const COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#8b5cf6", "#10b981", "#f97316", "#06b6d4", "#e11d48"];
-const currency = (n: number) => n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+/** Convert the flat tag list into a nested tree */
+function buildTagTree(tags) {
+    if (!tags) return [];
 
-function buildPrimarySeries(data: Primary) {
-    return Object.entries(data).map(([name, v]) => ({ name, value: v.spent }));
+    const map = new Map();
+    tags.forEach((t) => map.set(t.tagId, { ...t, children: [] }));
+
+    let roots = [];
+
+    for (const tag of map.values()) {
+        if (tag.parentTagId === null) {
+            roots.push(tag);
+        } else {
+            const parent = map.get(tag.parentTagId);
+            if (parent) parent.children.push(tag);
+        }
+    }
+
+    return roots;
 }
-function buildSecondarySeries(data: Primary, primaryKey: string) {
-    const node = data[primaryKey]; if (!node) return [];
-    return Object.entries(node.children).map(([name, v]) => ({ name, value: v.spent }));
+
+/** Build a direct totals map (tagId → sum of tx amounts with exactly that tagId) */
+function buildDirectTotals(transactions, tags) {
+    if (!transactions || !tags) return {};
+
+    const totals = {};
+
+    for (const t of Object.values(transactions)) {
+        if (!t.tagId) continue;
+        totals[t.tagId] = (totals[t.tagId] || 0) + t.amount;
+    }
+
+    return totals;
 }
-function buildTertiarySeries(data: Primary, primaryKey: string, secondaryKey: string) {
-    const node = data[primaryKey]?.children?.[secondaryKey]; if (!node) return [];
-    return Object.entries(node.children).map(([name, v]) => ({ name, value: v }));
+
+/** Recursively sum totals for a tag and its descendants */
+function getTotalForNode(node, directTotals) {
+    let sum = directTotals[node.tagId] || 0;
+    for (const child of node.children) {
+        sum += getTotalForNode(child, directTotals);
+    }
+    return sum;
 }
+
+/** Walk the tag tree using the drillPath */
+function getCurrentNode(tagTree, drillPath) {
+    if (!tagTree || tagTree.length === 0) return null;
+
+    if (drillPath.length === 0) {
+        return { tagId: null, tagName: "All Categories", children: tagTree };
+    }
+
+    let nodes = tagTree;
+    let node = null;
+
+    for (const id of drillPath) {
+        node = nodes.find((n) => n.tagId === id);
+        if (!node) return null;
+        nodes = node.children;
+    }
+
+    return node;
+}
+
+/** Build breadcrumbs from the drillPath */
+function buildBreadcrumbs(tagTree, drillPath) {
+    if (!tagTree) return [{ label: "All Categories", tagId: null }];
+
+    let crumbs = [{ label: "All Categories", tagId: null }];
+    let nodes = tagTree;
+
+    for (let i = 0; i < drillPath.length; i++) {
+        const id = drillPath[i];
+        const node = nodes.find((n) => n.tagId === id);
+        if (!node) break;
+
+        crumbs.push({ label: node.tagName, tagId: id });
+        nodes = node.children;
+    }
+
+    return crumbs;
+}
+
+function getBarNodesForDrill(tagTree, drillPath) {
+    // Root level
+    if (!drillPath.length) return tagTree;
+
+    // Walk tree to the drill node
+    let nodes = tagTree;
+    let node = null;
+
+    for (const id of drillPath) {
+        node = nodes.find((n) => n.tagId === id);
+        if (!node) return tagTree; // fallback
+        nodes = node.children;
+    }
+
+    // If the node has children, return them
+    if (node.children.length > 0) return node.children;
+
+    // If no children, return just the node itself
+    return [node];
+}
+
+/* -----------------------------------------------------
+   Colors for pie slices
+----------------------------------------------------- */
+const COLORS = [
+    "#2563eb",
+    "#16a34a",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#10b981",
+    "#f97316",
+    "#06b6d4",
+    "#e11d48",
+];
+
+/* -----------------------------------------------------
+   Component
+----------------------------------------------------- */
 
 export function Dashboard() {
-    const [drill, setDrill] = useState<DrillState>({ level: "primary" });
-    const [search, setSearch] = useState("");
+    const [tags, setTags] = useState();
+    const [transactions, setTransactions] = useState();
 
-    const bars = useMemo(() =>
-        Object.entries(DATA).map(([k, v]) => ({
-            key: k, budget: v.budget, spent: v.spent,
-            pct: Math.min(100, (v.spent / v.budget) * 100),
-            remaining: Math.max(0, v.budget - v.spent),
-        })), []);
+    useEffect(() => {
+        populateTags();
+        populateTransactions();
+    }, []);
 
+    /* Build tag tree */
+    const tagTree = useMemo(() => buildTagTree(tags), [tags]);
+
+    /* Direct totals: tx amounts by exact tagId */
+    const directTotals = useMemo(
+        () => buildDirectTotals(transactions, tags),
+        [transactions, tags]
+    );
+
+    /* Drilldown path (array of tagIds) */
+    const [drillPath, setDrillPath] = useState([]);
+
+    /* Breadcrumbs */
+    const breadcrumbs = useMemo(
+        () => buildBreadcrumbs(tagTree, drillPath),
+        [tagTree, drillPath]
+    );
+
+    /* Current node in the tree */
+    const currentNode = useMemo(
+        () => getCurrentNode(tagTree, drillPath),
+        [tagTree, drillPath]
+    );
+
+    /* Pie data = children of current node */
     const pieData = useMemo(() => {
-        if (drill.level === "primary") return buildPrimarySeries(DATA);
-        if (drill.level === "secondary" && drill.primaryKey) return buildSecondarySeries(DATA, drill.primaryKey);
-        if (drill.level === "tertiary" && drill.primaryKey && drill.secondaryKey) return buildTertiarySeries(DATA, drill.primaryKey, drill.secondaryKey);
-        return [];
-    }, [drill]);
+        if (!currentNode) return [];
 
-    const crumb = [
-        { label: "Primary", onClick: () => setDrill({ level: "primary" }) },
-        ...(drill.primaryKey ? [{ label: drill.primaryKey, onClick: () => setDrill({ level: "secondary", primaryKey: drill.primaryKey }) }] : []),
-        ...(drill.secondaryKey && drill.primaryKey ? [{ label: drill.secondaryKey, onClick: () => setDrill({ level: "tertiary", primaryKey: drill.primaryKey, secondaryKey: drill.secondaryKey }) }] : []),
-    ];
+        const children = currentNode.children || [];
+        const items = [];
 
-    const tx = [
-        { id: 1, merchant: "Whole Foods", amount: 54.23, tag: "Food>Groceries>Produce" },
-        { id: 2, merchant: "Shell", amount: 32.10, tag: "Transportation>Fuel>Regular" },
-        { id: 3, merchant: "AMC Theatres", amount: 24.00, tag: "Entertainment>Events>Movies" },
-        { id: 4, merchant: "Chipotle", amount: 11.80, tag: "Food>Restaurants>Fast Food" },
-    ];
-    const filteredTx = tx.filter(t => {
-        const q = search.toLowerCase();
-        return !q || t.merchant.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q);
-    });
+        // Add child categories
+        for (const child of children) {
+            items.push({
+                id: child.tagId,
+                name: child.tagName,
+                tagId: child.tagId,
+                value: getTotalForNode(child, directTotals),
+                isLeaf: !child.children?.length
+            });
+        }
 
-    function onSliceClick(e: any) {
-        const name = e?.name as string;
-        if (drill.level === "primary") setDrill({ level: "secondary", primaryKey: name });
-        else if (drill.level === "secondary" && drill.primaryKey) setDrill({ level: "tertiary", primaryKey: drill.primaryKey, secondaryKey: name });
+        // Add "Other" if this node has its own transactions
+        const selfDirectTotal = directTotals[currentNode.tagId] || 0;
+        if (selfDirectTotal > 0) {
+            items.push({
+                id: currentNode.tagId + "-other",
+                name: "Other",
+                tagId: null,        // no drill-down
+                value: selfDirectTotal,
+                isLeaf: true,
+                isOther: true
+            });
+        }
+
+        return items;
+    }, [currentNode, directTotals]);
+
+    /* Budget bars data — only top-level tags */
+    const barsData = useMemo(() => {
+        if (!tagTree || !directTotals || !currentNode) return [];
+
+        // Nodes = children of current drill node
+        const children = currentNode.children || [];
+        const items = [];
+
+        // add children
+        for (const child of children) {
+            const spent = getTotalForNode(child, directTotals);
+            const budget = child.budgetAmount || 0;
+
+            items.push({
+                key: child.tagName,
+                spent,
+                budget,
+                pct: budget > 0 ? Math.min(100, (spent / budget) * 100) : 0,
+                remaining: Math.max(0, budget - spent)
+            });
+        }
+
+        // add "Other" if there are direct transactions for this node
+        const selfDirectTotal = directTotals[currentNode.tagId] || 0;
+        if (selfDirectTotal > 0) {
+            items.push({
+                key: "Other",
+                spent: selfDirectTotal,
+                budget: 0,     // no budget
+                pct: 0,
+                remaining: 0
+            });
+        }
+
+        return items;
+    }, [tagTree, directTotals, currentNode]);
+
+    /** Click a pie slice → drill deeper */
+    function onSliceClick(entry) {
+        const tagId = entry?.tagId;
+        if (!tagId) return;
+
+        // Find the corresponding node in the current level
+        const childNode = currentNode.children.find(c => c.tagId === tagId);
+
+        // Do NOT drill into leaf nodes
+        if (!childNode || !childNode.children || childNode.children.length === 0) {
+            return; // ignore click
+        }
+
+        // Drill deeper
+        setDrillPath(path => [...path, tagId]);
     }
+
+
+    /** Breadcrumb click */
+    function goToBreadcrumb(index) {
+        if (index === 0) setDrillPath([]);
+        else setDrillPath(drillPath.slice(0, index));
+    }
+
+    /* -----------------------------------------------------
+       API
+    ----------------------------------------------------- */
+
+    async function populateTags() {
+        const response = await fetch("/tags?userId=demo-user");
+        if (response.ok) {
+            const data = await response.json();
+            setTags(data);
+        }
+    }
+
+    async function populateTransactions() {
+        const response = await fetch("/transactions?userId=demo-user");
+        if (response.ok) {
+            const data = await response.json();
+            setTransactions(data);
+        }
+    }
+
+    /* -----------------------------------------------------
+       Render
+    ----------------------------------------------------- */
 
     return (
         <>
-            {/* top bar */}
             <Navbar />
 
             <div className="min-h-screen bg-gray-50">
                 <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* budget bars */}
+
+                    {/* ---------------------- */}
+                    {/* Budget Bars */}
+                    {/* ---------------------- */}
                     <div className="bg-white border rounded-2xl p-4 lg:col-span-2">
                         <div className="font-semibold mb-2">Monthly Budgets by Category</div>
+
                         <div className="space-y-4">
-                            {bars.map(row => (
-                                <div key={row.key} className="p-3 rounded-xl border">
-                                    <div className="flex justify-between text-sm mb-1">
-                                        <div className="font-medium">{row.key}</div>
-                                        <div className="text-gray-600">{currency(row.spent)} / {currency(row.budget)} ({Math.round(row.pct)}%)</div>
+                            {!barsData.length ? (
+                                <div>Loading...</div>
+                            ) : (
+                                barsData.map(row => (
+                                    <div key={row.key} className="p-3 rounded-xl border">
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <div className="font-medium">{row.key}</div>
+                                            <div className="text-gray-600">
+                                                {currency(row.spent)} / {currency(row.budget)} ({Math.round(row.pct)}%)
+                                            </div>
+                                        </div>
+
+                                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full ${row.spent > row.budget ? "bg-red-600" : "bg-blue-600"}`}
+                                                style={{ width: `${row.pct}%` }}
+                                            />
+                                        </div>
+
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Remaining: {currency(row.remaining)}
+                                        </div>
                                     </div>
-                                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-600" style={{ width: `${row.pct}%` }} />
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">Remaining: {currency(row.remaining)}</div>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
                     </div>
 
-                    {/* pie drilldown */}
+                    {/* ---------------------- */}
+                    {/* Pie Chart Drilldown */}
+                    {/* ---------------------- */}
                     <div className="bg-white border rounded-2xl p-4">
                         <div className="font-semibold mb-2">Spending Breakdown</div>
 
-                        <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
-                            {crumb.map((c, i) => (
-                                <div key={i} className="flex items-center">
+                        {/* Breadcrumbs */}
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+                            {breadcrumbs.map((c, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-center cursor-pointer hover:underline"
+                                    onClick={() => goToBreadcrumb(i)}
+                                >
                                     {i > 0 && <span className="mx-1">&gt;</span>}
-                                    <button className="hover:underline" onClick={c.onClick}>{c.label}</button>
+                                    {c.label}
                                 </div>
                             ))}
-                            {drill.level !== "primary" && (
-                                <button
-                                    className="ml-auto text-xs px-2 py-1 border rounded-lg hover:bg-gray-50"
-                                    onClick={() => setDrill(d =>
-                                        d.level === "tertiary" && d.primaryKey ? { level: "secondary", primaryKey: d.primaryKey } : { level: "primary" }
-                                    )}
-                                >
-                                    Up one level
-                                </button>
-                            )}
                         </div>
 
+                        {/* Pie */}
                         <div className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
-                                    <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100} onClick={onSliceClick}>
-                                        {pieData.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                                    <Pie
+                                        data={pieData}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        outerRadius={100}
+                                        onClick={onSliceClick}
+                                    >
+                                    {pieData.map((slice, idx) => (
+                                        <Cell
+                                            key={slice.id}
+                                            fill={slice.isOther ? "#9CA3AF" : COLORS[idx % COLORS.length]} // 👈 Always gray for Other
+                                            cursor={slice.isOther ? "default" : "pointer"}
+                                            opacity={slice.isOther ? 0.7 : 1}
+                                        />
+                                    ))}
                                     </Pie>
-                                    <Tooltip formatter={(v: number) => currency(Number(v))} />
+                                    <Tooltip formatter={v => currency(Number(v))} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
-                        <div className="text-xs text-gray-500 mt-2">Tip: click a slice to drill down.</div>
+
+                        <div className="text-xs text-gray-500 mt-2">
+                            Tip: click a slice to drill down.
+                        </div>
                     </div>
 
-                    {/* transactions */}
-                    <div className="bg-white border rounded-2xl p-4 lg:col-span-3">
-                        <div className="font-semibold mb-2">Transactions (mock)</div>
-                        <div className="flex gap-2 mb-3">
-                            <input
-                                className="border rounded-lg px-3 py-2 w-full"
-                                placeholder="Search merchant or tag�"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                            <button className="px-3 py-2 border rounded-lg hover:bg-gray-50">Apply AI Tagging</button>
-                        </div>
-                        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {filteredTx.map(t => (
-                                <div key={t.id} className="border rounded-2xl p-3">
-                                    <div className="flex justify-between">
-                                        <div className="font-medium">{t.merchant}</div>
-                                        <div className="font-semibold">{currency(t.amount)}</div>
-                                    </div>
-                                    <div className="text-xs text-gray-600 mt-1">{t.tag}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div>
         </>
-       
+
     );
 }
