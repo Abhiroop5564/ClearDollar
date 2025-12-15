@@ -15,7 +15,7 @@ namespace BudgetApp.Server
 
             // 1. Register the Database Context
             builder.Services.AddDbContext<BudgetDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("WindowsConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("MacConnection")));
 
             // 2. Change Dependencies from Singleton Mock to Scoped SQL Accessors
             // Note: DB services usually use AddScoped, not AddSingleton

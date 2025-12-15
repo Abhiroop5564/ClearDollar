@@ -22,7 +22,7 @@ type TagDto = {
 };
 
 /** Convert flat tags into a nested tree, filtered by explicit tagType */
-function buildTagTreeByMode(tags: any, mode: Mode) {
+export function buildTagTreeByMode(tags: any, mode: Mode) {
     if (!tags) return [];
 
     const list: TagDto[] = Array.isArray(tags) ? tags : Object.values(tags);
@@ -59,7 +59,7 @@ function buildTagTreeByMode(tags: any, mode: Mode) {
  * - expenses: take negative tx only, store as positive magnitude
  * - income: take positive tx only, store as positive
  */
-function buildDirectTotalsByMode(transactions: { [s: string]: unknown; } | ArrayLike<unknown> | undefined, mode: string) {
+export function buildDirectTotalsByMode(transactions: { [s: string]: unknown; } | ArrayLike<unknown> | undefined, mode: string) {
     if (!transactions) return {};
 
     const totals = {};
