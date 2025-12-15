@@ -12,7 +12,7 @@ export function LoginPage() {
         if (!trimmed) return;
 
         localStorage.setItem("userId", trimmed);
-        navigate("/budget", { replace: true });
+        navigate("/dashboard", { replace: true });
     }
 
     return (

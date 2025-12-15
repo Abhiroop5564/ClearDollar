@@ -6,6 +6,22 @@ using budgetapp.server.Data;
 
 namespace BudgetApp.Server.Controllers
 {
+
+    public class UpdateTagRequest
+    {
+        public string? TagName { get; set; }
+        public decimal? BudgetAmount { get; set; }
+        public TagType? TagType { get; set; } // optional; usually unchanged here
+        public int? ParentTagId { get; set; } // optional; for drag-drop if you ever want
+    }
+    public class CreateTagRequest
+    {
+        public int? ParentTagId { get; set; }  // null = root
+        public string TagName { get; set; } = "New Tag";
+        public decimal BudgetAmount { get; set; } = 0m;
+        public TagType TagType { get; set; }  // required
+    }
+
     [ApiController]
     [Route("[controller]")]
     public class TagsController : ControllerBase
