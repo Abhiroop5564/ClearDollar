@@ -59,7 +59,7 @@ function buildTagTreeByMode(tags: any, mode: Mode) {
  * - expenses: take negative tx only, store as positive magnitude
  * - income: take positive tx only, store as positive
  */
-function buildDirectTotalsByMode(transactions, mode) {
+function buildDirectTotalsByMode(transactions: { [s: string]: unknown; } | ArrayLike<unknown> | undefined, mode: string) {
     if (!transactions) return {};
 
     const totals = {};
@@ -83,7 +83,7 @@ function buildDirectTotalsByMode(transactions, mode) {
 }
 
 /** Recursively sum totals for a tag and its descendants */
-function getTotalForNode(node, directTotals) {
+function getTotalForNode(node: { tagId: string | number; children: any; }, directTotals: { [x: string]: number; }) {
     let sum = directTotals[node.tagId] || 0;
     for (const child of node.children) {
         sum += getTotalForNode(child, directTotals);
@@ -92,7 +92,7 @@ function getTotalForNode(node, directTotals) {
 }
 
 /** Walk the tag tree using the drillPath */
-function getCurrentNode(tagTree, drillPath) {
+function getCurrentNode(tagTree: string | any[], drillPath: string | any[]) {
     if (!tagTree) return null;
 
     // If this mode has no tags, still return a valid root node.
@@ -109,7 +109,7 @@ function getCurrentNode(tagTree, drillPath) {
     let node = null;
 
     for (const id of drillPath) {
-        node = nodes.find((n) => n.tagId === id);
+        node = nodes.find((n: { tagId: any; }) => n.tagId === id);
         if (!node) return null;
         nodes = node.children;
     }
@@ -118,7 +118,7 @@ function getCurrentNode(tagTree, drillPath) {
 }
 
 /** Build breadcrumbs from the drillPath */
-function buildBreadcrumbs(tagTree, drillPath) {
+function buildBreadcrumbs(tagTree: any[], drillPath: string | any[]) {
     if (!tagTree) return [{ label: "All Categories", tagId: null }];
 
     const crumbs = [{ label: "All Categories", tagId: null }];
@@ -126,7 +126,7 @@ function buildBreadcrumbs(tagTree, drillPath) {
 
     for (let i = 0; i < drillPath.length; i++) {
         const id = drillPath[i];
-        const node = nodes.find((n) => n.tagId === id);
+        const node = nodes.find((n: { tagId: any; }) => n.tagId === id);
         if (!node) break;
 
         crumbs.push({ label: node.tagName, tagId: id });
@@ -141,7 +141,7 @@ function buildBreadcrumbs(tagTree, drillPath) {
  * - expenses: sum abs(negative untagged)
  * - income: sum positive untagged
  */
-function computeUntaggedTotalByMode(transactions, mode) {
+function computeUntaggedTotalByMode(transactions: { [s: string]: unknown; } | ArrayLike<unknown> | undefined, mode: string) {
     if (!transactions) return 0;
 
     return Object.values(transactions).reduce((sum, t) => {
@@ -328,11 +328,11 @@ export function Dashboard() {
     }, [tagTree, currentNode, directTotals, drillPath, untaggedTotal]);
 
     /** Click a pie slice → drill deeper */
-    function onSliceClick(entry) {
+    function onSliceClick(entry: { tagId: any; }) {
         const tagId = entry?.tagId;
         if (!tagId) return;
 
-        const childNode = currentNode.children.find((c) => c.tagId === tagId);
+        const childNode = currentNode.children.find((c: { tagId: any; }) => c.tagId === tagId);
 
         // Do NOT drill into leaf nodes
         if (!childNode?.children?.length) return;
@@ -341,7 +341,7 @@ export function Dashboard() {
     }
 
     /** Breadcrumb click */
-    function goToBreadcrumb(index) {
+    function goToBreadcrumb(index: number | undefined) {
         if (index === 0) setDrillPath([]);
         else setDrillPath(drillPath.slice(0, index));
     }

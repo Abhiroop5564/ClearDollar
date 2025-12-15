@@ -10,6 +10,5 @@ namespace BudgetApp.Server.Accessors
         List<Tag> GetAll(string userId);
         void Add(string userId, Tag tag);
         void Update(Tag tag);
-        //void ApplyTagUpdates(string userId, List<TagDto> tags);
     }
 }

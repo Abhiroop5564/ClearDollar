@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Navbar } from "../Components/Navbar";
 
 import {
@@ -132,27 +132,6 @@ function syncParentIds(
     }));
 }
 
-function flattenForSave(
-    items: TreeItems<TagTreeNode>,
-    parentTagId: number | null = null
-) {
-    const out: TagDto[] = [];
-
-    for (const n of items) {
-        out.push({
-            tagId: n.tagId,
-            parentTagId,
-            tagName: n.tagName,
-            budgetAmount: n.budgetAmount,
-            tagType: n.tagType,
-        });
-
-        out.push(...flattenForSave(n.children ?? [], n.tagId));
-    }
-
-    return out;
-}
-
 function toParentMap(pairs: Array<{ tagId: number; parentTagId: number | null }>) {
     const m = new Map<number, number | null>();
     for (const p of pairs) m.set(p.tagId, p.parentTagId);
@@ -178,7 +157,6 @@ function diffParentChanges(
 
 export function BudgetPage() {
     const USER_ID = localStorage.getItem("userId")!;
-    const SAVE_URL = `/tags/restructure?userId=${encodeURIComponent(USER_ID)}`;
 
     const [mode, setMode] = useState<Mode>("expenses");
     const [allTags, setAllTags] = useState<TagDto[] | undefined>(undefined);
@@ -207,13 +185,6 @@ export function BudgetPage() {
 
     const activeTree = mode === "income" ? incomeTree : expensesTree;
     const setActiveTree = mode === "income" ? setIncomeTree : setExpensesTree;
-
-    const activeParentMap = useMemo(() => flattenTreeWithParents(activeTree), [activeTree]);
-    const incomeParentMap = useMemo(() => flattenTreeWithParents(incomeTree), [incomeTree]);
-    const expensesParentMap = useMemo(
-        () => flattenTreeWithParents(expensesTree),
-        [expensesTree]
-    );
 
     async function addTag() {
         setSaveStatus(null);
@@ -307,10 +278,6 @@ export function BudgetPage() {
             useEffect(() => {
                 setAmountDraft(String(item.budgetAmount));
             }, [item.budgetAmount]);
-
-            useEffect(() => {
-                console.log(`Active tree (${mode}) changed:`, activeTree);
-            }, [activeTree, mode]);
 
             return (
                 <SimpleTreeItemWrapper {...props} ref={ref}>

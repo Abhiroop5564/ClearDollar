@@ -12,7 +12,7 @@ export function LoginPage() {
         const userId = trimmed || "demo-user";
 
         localStorage.setItem("userId", userId);
-        navigate("/budget", { replace: true });
+        navigate("/dashboard", { replace: true });
     }
 
     return (

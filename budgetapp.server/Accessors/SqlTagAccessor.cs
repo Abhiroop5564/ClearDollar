@@ -40,24 +40,5 @@ namespace BudgetApp.Server.Accessors
             _context.Tags.Update(tag);
             _context.SaveChanges();
         }
-
-        //public void ApplyTagUpdates(string userId, List<TagDto> tags)
-        //{
-        //    var existing = _context.Tags
-        //        .Where(t => t.UserId == userId)
-        //        .ToDictionary(t => t.TagId);
-
-        //    foreach (var dto in tags)
-        //    {
-        //        if (!existing.TryGetValue(dto.TagId, out var tag))
-        //            continue; // or throw if you want strict behavior
-
-        //        tag.ParentTagId = dto.ParentTagId;
-        //        tag.TagName = dto.TagName;
-        //        tag.BudgetAmount = dto.BudgetAmount;
-        //    }
-
-        //    _context.SaveChanges();
-        //}
     }
 }
