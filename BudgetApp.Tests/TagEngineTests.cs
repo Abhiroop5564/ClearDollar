@@ -1,7 +1,7 @@
 ﻿using Xunit;
 using System.Collections.Generic;
 using BudgetApp.Server.Engines;
-using BudgetApp.Server;
+using budgetapp.server.Data;
 
 namespace BudgetApp.Tests
 {

@@ -1,3 +1,4 @@
+using budgetapp.server.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetApp.Server.Data

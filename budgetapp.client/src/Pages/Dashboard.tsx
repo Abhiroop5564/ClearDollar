@@ -10,26 +10,48 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 const currency = (n) =>
     Number(n).toLocaleString(undefined, { style: "currency", currency: "USD" });
 
-/** Convert the flat tag list into a nested tree */
-function buildTagTree(tags) {
+type TagType = 1 | 2; // backend enum: Income=1, Expense=2
+type Mode = "expenses" | "income";
+
+type TagDto = {
+    tagId: number;
+    parentTagId: number | null;
+    tagName: string;
+    budgetAmount: number;
+    tagType: TagType;
+};
+
+/** Convert flat tags into a nested tree, filtered by explicit tagType */
+function buildTagTreeByMode(tags: any, mode: Mode) {
     if (!tags) return [];
 
-    const map = new Map();
-    tags.forEach((t) => map.set(t.tagId, { ...t, children: [] }));
+    const list: TagDto[] = Array.isArray(tags) ? tags : Object.values(tags);
 
-    const roots = [];
+    const wantedType: TagType = mode === "income" ? 1 : 2;
 
-    for (const tag of map.values()) {
-        if (tag.parentTagId === null) {
-            roots.push(tag);
+    // Keep only tags of the requested type
+    const filtered = list.filter((t) => t && t.tagType === wantedType);
+
+    // Build id -> node map
+    const nodeMap = new Map<number, any>();
+    filtered.forEach((t) =>
+        nodeMap.set(t.tagId, { ...t, children: [] })
+    );
+
+    // Wire up parent/child only within filtered set
+    const roots: any[] = [];
+    for (const node of nodeMap.values()) {
+        const pid = node.parentTagId;
+        if (pid != null && nodeMap.has(pid)) {
+            nodeMap.get(pid).children.push(node);
         } else {
-            const parent = map.get(tag.parentTagId);
-            if (parent) parent.children.push(tag);
+            roots.push(node);
         }
     }
 
     return roots;
 }
+
 
 /**
  * Build a direct totals map (tagId → sum of tx amounts with exactly that tagId),
@@ -71,7 +93,13 @@ function getTotalForNode(node, directTotals) {
 
 /** Walk the tag tree using the drillPath */
 function getCurrentNode(tagTree, drillPath) {
-    if (!tagTree || tagTree.length === 0) return null;
+    if (!tagTree) return null;
+
+    // If this mode has no tags, still return a valid root node.
+    // This lets root-level "Other (Untagged)" show up.
+    if (tagTree.length === 0) {
+        return { tagId: null, tagName: "All Categories", children: [] };
+    }
 
     if (drillPath.length === 0) {
         return { tagId: null, tagName: "All Categories", children: tagTree };
@@ -169,7 +197,7 @@ export function Dashboard() {
     }, [mode]);
 
     /* Build tag tree */
-    const tagTree = useMemo(() => buildTagTree(tags), [tags]);
+    const tagTree = useMemo(() => buildTagTreeByMode(tags, mode), [tags, mode]);
 
     /* Direct totals by mode */
     const directTotals = useMemo(

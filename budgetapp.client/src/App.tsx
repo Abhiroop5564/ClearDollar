@@ -1,7 +1,7 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { Dashboard }  from "./Pages/Dashboard";
 import { LoginPage } from "./Pages/Login";
-import { BudgetPage } from "./Pages/Budget";
+import { BudgetPage } from "./Pages/Budget2";
 import { TransactionsPage } from "./Pages/Transactions";
 
 export default function App() {

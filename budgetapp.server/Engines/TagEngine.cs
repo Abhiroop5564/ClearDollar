@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using BudgetApp.Server; // Required to see the 'Tag' class
+using budgetapp.server.Data;
 
 namespace BudgetApp.Server.Engines
 {
