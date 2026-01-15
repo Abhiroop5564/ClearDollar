@@ -1,12 +1,15 @@
 # ClearDollar
 
-**ClearDollar** is a modern, full-stack personal finance application designed to give users granular control over their budget. It features a hierarchical tagging system, interactive visualizations, and transaction management capabilities, built with **ASP.NET Core 9** and **React**.
+> Personal fork of a collaborative budgeting application, maintained for portfolio and continued development.
 
-![alt text](./screenshots/dashboard.png)
+**ClearDollar** is a modern, full-stack personal finance application that gives users granular control over their budgets. It features a hierarchical tagging system, interactive data visualizations, and robust transaction management, built using **ASP.NET Core 9** and **React**.
+
+![Dashboard preview](./screenshots/dashboard.png)
 
 ## Key Features
 
-### 1\. Interactive Dashboard
+### 1. Interactive Dashboard
+
 
 * **Drill-Down Analytics:** Explore spending and income through dynamic pie charts. Click slices to drill down from Primary Categories (e.g., Food) to Secondary (e.g., Groceries) and Tertiary tags (e.g., Produce).
 * **Budget Progress:** Visual progress bars track spending against budget limits for every category.
